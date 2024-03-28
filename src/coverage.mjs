@@ -15,7 +15,7 @@ const COLORS = {
 
 function filterResults(coverage) {
   return coverage.result.filter(({ url }) => {
-    const finalUrl = Url.replace("file://", "");
+    const finalUrl = url.replace("file://", "");
     return isAbsolute(finalUrl) && finalUrl !== CURRENT_FILE_NAME;
   });
 }
@@ -67,7 +67,7 @@ await SESSION.post("Profiler.stopPreciseCoverage");
 
 const RESULTS = filterResults(PRECISE_COVERAGE);
 
-for (const coverage of results) {
+for (const coverage of RESULTS) {
   const filename = fileURLToPath(coverage.url);
   const sourceCode = await readFile(filename, "utf-8");
   generateCoverageReport(filename, sourceCode, coverage.functions);
