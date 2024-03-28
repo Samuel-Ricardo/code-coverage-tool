@@ -4,6 +4,8 @@ import { isAbsolute } from "node:path";
 import { readFile } from "node:fs/promises";
 
 const CURRENT_FILE_NAME = fileURLToPath(import.meta.url);
+const ENTRYPOINT = "./index.mjs";
+const SESSION = new inspector.Session();
 
 const COLORS = {
   GREEN: "\x1b[32m",
@@ -48,4 +50,25 @@ function generateCoverageReport(filename, sourceCode, functions) {
       console.log(line);
     }
   });
+}
+
+SESSION.connect();
+
+await SESSION.post("Profiler.enable");
+await SESSION.post("Profiler.startPreciseCoverage", {
+  callCount: true,
+  detailed: true,
+});
+
+await import(ENTRYPOINT);
+
+const PRECISE_COVERAGE = await SESSION.post("Profiler.takePreciseCoverage");
+await SESSION.post("Profiler.stopPreciseCoverage");
+
+const RESULTS = filterResults(PRECISE_COVERAGE);
+
+for (const coverage of results) {
+  const filename = fileURLToPath(coverage.url);
+  const sourceCode = await readFile(filename, "utf-8");
+  generateCoverageReport(filename, sourceCode, coverage.functions);
 }
